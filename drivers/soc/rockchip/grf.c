@@ -229,10 +229,15 @@ static const struct rockchip_grf_info rk3399_grf __initconst = {
 	.num_values = ARRAY_SIZE(rk3399_defaults),
 };
 
+#define RK3588_SYS_GRF_SOC_CON6 	0x0318
 #define RK3588_SYS_GRF_SOC_CON7		0x031c
 
 static const struct rockchip_grf_value rk3588_sys_grf_defaults[] __initconst = {
 	{ "Connect EDP hpd to IO", RK3588_SYS_GRF_SOC_CON7, HIWORD_UPDATE(0x3, 0x3, 14) },
+#ifdef CONFIG_ROCKCHIP_FYDETAB_GRF
+	/* Without this, MiscroSD card won't work normally with bus width 4 */
+	{ "jtag switching", RK3588_SYS_GRF_SOC_CON6, HIWORD_UPDATE(0x0, 0x1, 14) },
+#endif
 };
 
 static const struct rockchip_grf_info rk3588_sys_grf __initconst = {
