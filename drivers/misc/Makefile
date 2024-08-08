@@ -63,5 +63,7 @@ obj-$(CONFIG_UACCE)		+= uacce/
 obj-$(CONFIG_XILINX_SDFEC)	+= xilinx_sdfec.o
 obj-$(CONFIG_HISI_HIKEY_USB)	+= hisi_hikey_usb.o
 obj-$(CONFIG_UID_SYS_STATS)	+= uid_sys_stats.o
+obj-$(CONFIG_JW_IO)     += jw_io_core.o
+obj-y   += redriver/
 obj-$(CONFIG_RK803)		+= rk803.o
 obj-$(CONFIG_KHADAS_MCU) += khadas-mcu.o

@@ -809,6 +809,8 @@ static int sbs_get_chemistry(struct i2c_client *client,
 		val->intval = POWER_SUPPLY_TECHNOLOGY_NiCd;
 	else if (!strncasecmp(chemistry, "NiMH", 4))
 		val->intval = POWER_SUPPLY_TECHNOLOGY_NiMH;
+  else if (!strncasecmp(chemistry, "3613", 4))
+    val->intval = POWER_SUPPLY_TECHNOLOGY_LION;
 	else
 		val->intval = POWER_SUPPLY_TECHNOLOGY_UNKNOWN;
 

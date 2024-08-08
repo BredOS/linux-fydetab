@@ -135,6 +135,7 @@ struct rockchip_udphy {
 	u32 dp_aux_din_sel;
 	bool dp_sink_hpd_sel;
 	bool dp_sink_hpd_cfg;
+  bool keep_dp_pol_normal;
 	u8 bw;
 	int id;
 
@@ -356,6 +357,21 @@ static const struct reg_sequence rk3588_udphy_init_sequence[] = {
 	{0x0024, 0x6e},
 };
 
+ATOMIC_NOTIFIER_HEAD(redriver_notifier);
+EXPORT_SYMBOL_GPL(redriver_notifier);
+
+int redriver_reg_notifier(struct notifier_block *nb)
+{
+        return atomic_notifier_chain_register(&redriver_notifier, nb);
+}
+EXPORT_SYMBOL_GPL(redriver_reg_notifier);
+
+void redriver_unreg_notifier(struct notifier_block *nb)
+{
+        atomic_notifier_chain_unregister(&redriver_notifier, nb);
+}
+EXPORT_SYMBOL_GPL(redriver_unreg_notifier);
+
 static inline int grfreg_write(struct regmap *base,
 			       const struct udphy_grf_reg *reg, bool en)
 {
@@ -559,8 +575,13 @@ static int upphy_set_typec_default_mapping(struct rockchip_udphy *udphy)
 		udphy->lane_mux_sel[1] = PHY_LANE_MUX_DP;
 		udphy->lane_mux_sel[2] = PHY_LANE_MUX_USB;
 		udphy->lane_mux_sel[3] = PHY_LANE_MUX_USB;
-		udphy->dp_aux_dout_sel = PHY_AUX_DP_DATA_POL_INVERT;
-		udphy->dp_aux_din_sel = PHY_AUX_DP_DATA_POL_INVERT;
+    if (udphy->keep_dp_pol_normal) {
+		  udphy->dp_aux_dout_sel = PHY_AUX_DP_DATA_POL_NORMAL;
+		  udphy->dp_aux_din_sel = PHY_AUX_DP_DATA_POL_NORMAL;
+    } else {
+      udphy->dp_aux_dout_sel = PHY_AUX_DP_DATA_POL_INVERT;
+      udphy->dp_aux_din_sel = PHY_AUX_DP_DATA_POL_INVERT;
+    }
 		gpiod_set_value_cansleep(udphy->sbu1_dc_gpio, 1);
 		gpiod_set_value_cansleep(udphy->sbu2_dc_gpio, 0);
 	} else {
@@ -807,6 +828,8 @@ static int udphy_parse_dt(struct rockchip_udphy *udphy, struct device *dev)
 		maximum_speed = usb_get_maximum_speed(dev);
 		udphy->hs = maximum_speed <= USB_SPEED_HIGH ? true : false;
 	}
+
+  udphy->keep_dp_pol_normal = of_property_read_bool(np, "keep-dp-normal");
 
 	ret = udphy_clk_init(udphy, dev);
 	if (ret)
@@ -1071,6 +1094,10 @@ static int usbdp_typec_mux_set(struct typec_mux *mux,
 	struct rockchip_udphy *udphy = typec_mux_get_drvdata(mux);
 	const struct rockchip_udphy_cfg *cfg = udphy->cfgs;
 	u8 mode;
+	uint32_t _flip = udphy->flip? 1:0;
+
+	atomic_notifier_call_chain(&redriver_notifier,
+                                state->mode, &_flip);
 
 	mutex_lock(&udphy->mutex);
 
@@ -1386,7 +1413,6 @@ static int rk3588_udphy_init(struct rockchip_udphy *udphy)
 		dev_err(udphy->dev, "refclk set error %d\n", ret);
 		goto assert_apb;
 	}
-
 	/* Step 3: configure lane mux */
 	regmap_update_bits(udphy->pma_regmap, CMN_LANE_MUX_AND_EN_OFFSET,
 			   CMN_DP_LANE_MUX_ALL | CMN_DP_LANE_EN_ALL,
