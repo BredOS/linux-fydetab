@@ -269,6 +269,15 @@
 	status = "okay";
 };
 
+&vp1 {
+  assigned-clocks = <&cru DCLK_VOP1_SRC>;
+};
+
+&vp2 {
+  assigned-clocks = <&cru DCLK_VOP2_SRC>;
+  assigned-clock-parents = <&cru PLL_V0PLL>;
+};
+
 &dsi0_in_vp2 {
 	status = "okay";
 };
@@ -282,14 +291,16 @@
 	rockchip,lane-rate = <676000>;
 	dsi0_panel: panel@0 {
 		status = "okay";
-		compatible = "simple-panel-dsi";
+		compatible = "simple-panel-dsi-fyde";
 		reg = <0>;
 		backlight = <&backlight>;
-		power-supply = <&vcc_avee>;
+		power-supply = <&vcc_lcd_en>;
 		reset-gpios = <&gpio3 RK_PC6 GPIO_ACTIVE_HIGH>;
+    avdd-gpios = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
+    avee-gpios = <&gpio3 RK_PA6 GPIO_ACTIVE_HIGH>;
     reset-enable-combined;
 		pinctrl-names = "default";
-		pinctrl-0 = <&lcd_rst_gpio>;
+		pinctrl-0 = <&lcd_rst_gpio &avdd_lcd_gpio &avee_lcd_gpio>;
 		reset-delay-ms = <120>;
 		enable-delay-ms = <120>;
 		prepare-delay-ms = <120>;

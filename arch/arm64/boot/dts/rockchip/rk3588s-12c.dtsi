@@ -184,7 +184,7 @@
     pinctrl-names = "default";
     pinctrl-0 = <&vcc_lcd_en_pin>;
   };
-
+#if 0
   vcc_avdd: vcc-avdd {
     compatible = "regulator-fixed";
     regulator-name = "vcc_avdd";
@@ -206,6 +206,7 @@
     pinctrl-0 = <&avee_lcd_gpio>;
     vin-supply = <&vcc_avdd>;
   };
+#endif
 
 	finger_power_test: finger-power-test {
 		compatible = "regulator-fixed";

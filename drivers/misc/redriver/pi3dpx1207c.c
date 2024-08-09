@@ -13,6 +13,7 @@
 #include <linux/clk-provider.h>
 #include <linux/i2c.h>
 #include <linux/usb/typec_dp.h>
+#include <linux/mutex.h>
 #define PI3DPX_BYTES_NUM	9
 
 extern int redriver_reg_notifier(struct notifier_block *nb);
@@ -29,6 +30,7 @@ struct pi3dpx_priv {
 		struct notifier_block nb;
     unsigned long typec_state;
     unsigned int flip;
+    struct mutex i2c_rw_lock;
 };
 
 struct pi3dpx_config redriver_config[2] = {
@@ -39,7 +41,7 @@ struct pi3dpx_config redriver_config[2] = {
 	},
 
 	{
-		{0x13 ,0x11 ,0x20 ,0x32 ,0x00 ,0xa7 ,0xa7 ,0xa7 ,0xa7},
+		{0x13 ,0x11 ,0x20 ,0x23 ,0x00 ,0xa7 ,0xa7 ,0xa7 ,0xa7},
 		{0x13 ,0x11 ,0x20 ,0x52 ,0x00 ,0xa7 ,0xa7 ,0xa7 ,0xa7},
 		{0x13 ,0x11 ,0x20 ,0x82 ,0x00 ,0xa7 ,0xa7 ,0xa7 ,0xa7},
 	}
@@ -75,17 +77,19 @@ static int pi3dpx_notifier_call(struct notifier_block *nb,
   priv->typec_state = val;
   priv->flip = *flip;
   pr_info("typec state:%lu, flip:%d", priv->typec_state, priv->flip);
+  mutex_lock(&priv->i2c_rw_lock);
 	switch (priv->typec_state) {
 		case TYPEC_DP_STATE_E:
     case TYPEC_DP_STATE_C:
 			pi3dpx_i2c_write(priv, 9, &redriver_config[0].full_dp_config);
 			break;
 	  case TYPEC_DP_STATE_D:
-			pi3dpx_i2c_write(priv, 9, &redriver_config[priv->flip].usb_dp_config);
+			pi3dpx_i2c_write(priv, 9, &redriver_config[priv->flip].full_dp_config);
 		  break;
     default:
       pi3dpx_i2c_write(priv, 9, &redriver_config[priv->flip].no_dp_config);
 	}
+  mutex_unlock(&priv->i2c_rw_lock);
   return NOTIFY_OK;
 }
 
@@ -99,12 +103,13 @@ static int pi3dpx1207c_probe(struct i2c_client *i2c,
                             sizeof(struct pi3dpx_priv), GFP_KERNEL);
     if (priv == NULL)
        return -ENOMEM;
-
+    mutex_init(&priv->i2c_rw_lock);
     i2c_set_clientdata(i2c, priv);
     priv->client = i2c;
     priv->nb.notifier_call = pi3dpx_notifier_call;
     ret = redriver_reg_notifier(&priv->nb);
-
+    if (ret < 0)
+      pr_warn("Failed to register Type C notifier, port-switcher will not work.");
 	return 0;
 }
 
