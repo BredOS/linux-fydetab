@@ -447,11 +447,6 @@ static int panel_simple_unprepare(struct drm_panel *panel)
 			panel_simple_xfer_dsi_cmd_seq(p, p->desc->exit_seq);
 
 	gpiod_direction_output(p->reset_gpio, 0);
-  msleep(2);
-  gpiod_direction_output(p->avee_gpio, 0);
-  msleep(2);
-  gpiod_direction_output(p->avdd_gpio, 0);
-  msleep(2);
 	gpiod_direction_output(p->enable_gpio, 0);
 
 	panel_simple_regulator_disable(p);
@@ -508,12 +503,12 @@ static int panel_simple_prepare(struct drm_panel *panel)
 	gpiod_direction_output(p->enable_gpio, 1);
 	msleep(5);
 	gpiod_direction_output(p->avdd_gpio, 1);
-	msleep(10);
+	msleep(5);
 	gpiod_direction_output(p->avee_gpio, 1);
-  msleep(12);
 
 	if (p->desc->delay.reset)
 		msleep(p->desc->delay.prepare);
+
 	gpiod_direction_output(p->reset_gpio, 1);
 
 	if (p->desc->delay.reset)
