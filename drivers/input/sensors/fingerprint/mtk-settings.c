@@ -175,9 +175,8 @@ int mas_get_platform(void) {
 	return ret;
 }
 
-int mas_remove_platform(void){
+void mas_remove_platform(void){
 	spi_unregister_driver(&sdrv);
-	return 0;
 }
 
 int mas_finger_get_gpio_info(struct platform_device *pdev){

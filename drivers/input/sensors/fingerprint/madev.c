@@ -14,6 +14,8 @@
 #include "tee_client_api.h"
 #endif
 
+#include <linux/pm_wakeup.h>
+
 //spdev use for recording the data for other use
 static unsigned int irq, ret;
 static unsigned int ma_drv_reg;
@@ -30,7 +32,7 @@ static DECLARE_WAIT_QUEUE_HEAD(U2_Waitq);
 #ifdef CONFIG_PM_WAKELOCKS
 struct wakeup_source *gProcessWakeLock;
 #else
-struct wake_lock gProcessWakeLock;
+struct wakeup_source *gProcessWakeLock;
 #endif
 
 struct work_struct gWork;
@@ -194,7 +196,9 @@ static long mas_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
 #ifdef CONFIG_PM_WAKELOCKS
             __pm_wakeup_event(gProcessWakeLock, 5000);
 #else
-	    wake_lock_timeout(&gProcessWakeLock, 5 * HZ);
+        wakeup_source_activate(gProcessWakeLock);
+        schedule_timeout(5 * HZ);
+        wakeup_source_deactivate(gProcessWakeLock);
 #endif
             break;
         case SLEEP:                                                       //remove the process out of the runqueue
@@ -638,7 +642,7 @@ static int init_vars(void)
 #ifdef CONFIG_PM_WAKELOCKS
     gProcessWakeLock = wakeup_source_register(NULL, "microarray_process_wakelock");
 #else
-    wake_lock_init(&gProcessWakeLock, WAKE_LOCK_SUSPEND, "microarray_process_wakelock");
+    gProcessWakeLock = wakeup_source_register(NULL, "microarray_process_wakelock");
 #endif
 
     INIT_WORK(&gWork, mas_work);
@@ -849,11 +853,10 @@ err1:
     return ret;
 }
 
-int mas_remove(struct spi_device *spi) {
+void mas_remove(struct spi_device *spi) {
     deinit_file_node();
     deinit_interrupt();
     deinit_vars();
-    return 0;
 }
 
 

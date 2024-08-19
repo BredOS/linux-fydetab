@@ -73,7 +73,7 @@ extern int mas_plat_probe(struct platform_device *pdev);
 extern int mas_plat_remove(struct platform_device *pdev);
 
 extern int mas_probe(struct spi_device *spi);
-extern int mas_remove(struct spi_device *spi);
+extern void mas_remove(struct spi_device *spi);
 
 /* add for spi cls ctl start */
 #ifdef CONFIG_SPI_MT65XX
@@ -207,7 +207,7 @@ void mas_disable_spi_clock(struct spi_device *spi);
 
 unsigned int mas_get_irq(struct device *dev);
 int mas_get_platform(void);
-int mas_remove_platform(void);
+void mas_remove_platform(void);
 int mas_power(int cmd);
 int get_screen(void);
 void ma_spi_change(struct spi_device *spi, unsigned int speed, int flag);

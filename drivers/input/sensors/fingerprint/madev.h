@@ -170,7 +170,7 @@ extern void mas_enable_spi_clock(struct spi_device *spi);
 extern void mas_disable_spi_clock(struct spi_device *spi);
 extern unsigned int mas_get_irq(struct device *dev);
 extern int mas_get_platform(void);
-extern int mas_remove_platform(void);
+extern void mas_remove_platform(void);
 extern void ma_spi_change(struct spi_device *spi, unsigned int speed, int flag);
 extern int mas_get_interrupt_gpio(unsigned int index);
 extern int mas_switch_power(unsigned int on_off);
